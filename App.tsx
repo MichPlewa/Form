@@ -1,46 +1,89 @@
-import { StyleSheet, Text, Switch, View, Button, Image } from 'react-native';
+import { Text, View, Button, Image } from 'react-native';
 import { useState } from 'react';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { TextInput } from '@react-native-material/core';
+import styles from './styles';
 
 export default function App() {
-  const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
-  const [pesel, setPesel] = useState('');
-  const [nip, setNip] = useState('');
-  const [isOsoba, setIsOsoba] = useState(false);
+  const [data, setData] = useState({
+    name: '',
+    surname: '',
+    pesel: '',
+    nip: '',
+    imgData: {},
+    isOsoba: true,
+  });
+  const [isValidatePesel, setIsValidatePesel] = useState(false);
+  const [isValidateNip, setIsValidateNip] = useState(false);
+  const [sendErrorm, setSendError] = useState(false);
   const openGallery = async () => {
-    const result = await launchImageLibrary({
-      selectionLimit: 1,
-      mediaType: 'photo',
-      includeBase64: true,
-    });
-    console.log(result);
-  };
-  const handleSubmit = () => {
-    const fd = new FormData();
-    fd.append('name', name);
-    fd.append('surrname', surname);
-    if (!isOsoba) fd.append('pesel', pesel);
-    else fd.append('nip', nip);
-
-    const fetchOptions = {
-      method: 'POST',
-      body: fd,
-    };
-
-    fetch('https://localhost:60001/Contractor/Save', fetchOptions)
-      .then((response) => response.json())
-      .then((response) => {
-        console.log('response', response);
-      });
+    launchImageLibrary(
+      {
+        selectionLimit: 1,
+        mediaType: 'photo',
+        includeBase64: true,
+      },
+      (response) => {
+        if (response.didCancel) {
+          console.log('User cancelled image picker');
+        } else if (response.assets !== null && response.assets) {
+          const source = { uri: response.assets[0].uri };
+          console.log(source, 'source');
+          setData({ ...data, imgData: source });
+        }
+      }
+    );
   };
 
   const indexOfselected = () => {
-    if (isOsoba) return 1;
+    if (!data.isOsoba) return 1;
     else return 0;
+  };
+
+  const onChanged = (text: string) => {
+    let newText = '';
+    let numbers = '0123456789';
+
+    for (var i = 0; i < text.length; i++) {
+      if (numbers.indexOf(text[i]) > -1) {
+        newText = newText + text[i];
+      }
+    }
+    if (data.isOsoba) {
+      if (newText.length === 11) {
+        setIsValidatePesel(true);
+        setData({ ...data, pesel: newText });
+      } else {
+        setIsValidatePesel(false);
+      }
+    } else {
+      if (newText.length === 10) {
+        setIsValidateNip(true);
+        setData({ ...data, nip: newText });
+      } else {
+        setIsValidateNip(false);
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (isValidateNip || isValidatePesel) {
+      const fetchOptions = {
+        method: 'POST',
+        body: JSON.stringify(data),
+      };
+
+      fetch('https://localhost:60001/Contractor/Save', fetchOptions)
+        .then((response) => response.json())
+        .then((response) => {
+          console.log('response', response);
+        });
+      setSendError(false);
+    } else {
+      setSendError(true);
+    }
   };
 
   return (
@@ -52,62 +95,84 @@ export default function App() {
         end={{ x: 1, y: 0.5 }}
       >
         <View style={styles.bc}>
-          <Text style={styles.title}>Nowy Kontrahenta</Text>
+          <Text style={styles.title}>Nowy Kontrahent</Text>
           <SegmentedControl
             values={['Osoba', 'Firma']}
             selectedIndex={indexOfselected()}
             onChange={(e) => {
-              if (e.nativeEvent.value === 'Osoba') setIsOsoba(false);
-              else setIsOsoba(true);
+              if (e.nativeEvent.value === 'Osoba')
+                setData({ ...data, isOsoba: true });
+              else setData({ ...data, isOsoba: false });
             }}
             style={{ margin: 16 }}
           />
           <TextInput
             style={styles.form}
             label="Imię"
+            value={data.name || ''}
             onChangeText={(e) => {
-              setName(e);
+              setData({ ...data, name: e });
             }}
           />
           <TextInput
-            label="Nazwisko"
             style={styles.form}
+            label="Nazwisko"
+            value={data.surname || ''}
             onChangeText={(e) => {
-              setSurname(e);
+              setData({ ...data, surname: e });
             }}
           />
-          {!isOsoba ? (
-            <TextInput
-              label="PESEL"
-              style={styles.form}
-              onChangeText={(e) => {
-                setPesel(e);
-              }}
-            />
+          {data.isOsoba ? (
+            <View>
+              <TextInput
+                style={styles.formPeselNip}
+                label="PESEL"
+                keyboardType="numeric"
+                maxLength={11}
+                onChangeText={(e) => {
+                  onChanged(e);
+                }}
+              />
+              {isValidatePesel ? null : (
+                <View>
+                  <Text style={styles.errorMsg}>PESEL musi mieć 11 cyfr</Text>
+                </View>
+              )}
+            </View>
           ) : (
-            <TextInput
-              label="NIP"
-              style={styles.form}
-              onChangeText={(e) => {
-                setNip(e);
-              }}
-            />
+            <View>
+              <TextInput
+                style={styles.formPeselNip}
+                label="NIP"
+                keyboardType="numeric"
+                maxLength={10}
+                onChangeText={(e) => {
+                  onChanged(e);
+                }}
+              />
+              {isValidateNip ? null : (
+                <View>
+                  <Text style={styles.errorMsg}>NIP musi mieć 10 cyfr</Text>
+                </View>
+              )}
+            </View>
           )}
-          <View style={styles.container1}>
+          <View style={styles.containerImgPicker}>
             <View style={styles.imgBtn}>
-              <Button title="Dodaj Zdjęcie" onPress={() => openGallery()} />
+              <Button
+                title="Dodaj Zdjęcie"
+                color="rgba(31, 159, 103, 1)"
+                onPress={() => openGallery()}
+              />
             </View>
             <View>
-              <Image
-                style={styles.img}
-                source={require('./assets/favicon.png')}
-              />
+              <Image style={styles.img} source={data.imgData} />
             </View>
           </View>
           <View style={styles.sendBtn}>
             <Button
               title="Wyślij"
-              color="#9ef500"
+              color="rgba(31, 159, 103, 1)"
               onPress={() => handleSubmit()}
             />
           </View>
@@ -116,46 +181,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  linearGradient: {
-    flex: 1,
-    width: '100%',
-    padding: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bc: {
-    backgroundColor: 'rgba(215, 179, 252, 1)',
-    maxWidth: 400,
-    borderRadius: 16,
-  },
-  container: {
-    flex: 1,
-  },
-  container1: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-  },
-  title: {
-    marginLeft: 16,
-    marginTop: 16,
-    fontSize: 21,
-    textAlign: 'center',
-  },
-  form: {
-    marginBottom: 8,
-    width: 300,
-    marginLeft: 16,
-    marginRight: 16,
-  },
-  imgBtn: {
-    justifyContent: 'flex-start',
-  },
-  img: {
-    width: 50,
-    height: 50,
-  },
-  sendBtn: { margin: 16 },
-});
