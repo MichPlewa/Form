@@ -17,7 +17,6 @@ export default function App() {
   });
   const [isValidatePesel, setIsValidatePesel] = useState(false);
   const [isValidateNip, setIsValidateNip] = useState(false);
-  const [sendErrorm, setSendError] = useState(false);
   const openGallery = async () => {
     launchImageLibrary(
       {
@@ -76,13 +75,10 @@ export default function App() {
       };
 
       fetch('https://localhost:60001/Contractor/Save', fetchOptions)
-        .then((response) => response.json())
-        .then((response) => {
-          console.log('response', response);
+        .then((res) => res.json())
+        .catch((error) => {
+          throw error;
         });
-      setSendError(false);
-    } else {
-      setSendError(true);
     }
   };
 
