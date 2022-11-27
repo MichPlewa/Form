@@ -1,16 +1,9 @@
-import {
-  StyleSheet,
-  Text,
-  Switch,
-  View,
-  Button,
-  TextInput,
-  Image,
-} from 'react-native';
+import { StyleSheet, Text, Switch, View, Button, Image } from 'react-native';
 import { useState } from 'react';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { TextInput } from '@react-native-material/core';
 
 export default function App() {
   const [name, setName] = useState('');
@@ -59,7 +52,7 @@ export default function App() {
         end={{ x: 1, y: 0.5 }}
       >
         <View style={styles.bc}>
-          <Text style={styles.title}>Dodaj Kontrahenta</Text>
+          <Text style={styles.title}>Nowy Kontrahenta</Text>
           <SegmentedControl
             values={['Osoba', 'Firma']}
             selectedIndex={indexOfselected()}
@@ -67,17 +60,17 @@ export default function App() {
               if (e.nativeEvent.value === 'Osoba') setIsOsoba(false);
               else setIsOsoba(true);
             }}
-            style={{ marginBottom: 16 }}
+            style={{ margin: 16 }}
           />
           <TextInput
-            placeholder="Imię"
             style={styles.form}
+            label="Imię"
             onChangeText={(e) => {
               setName(e);
             }}
           />
           <TextInput
-            placeholder="Nazwisko"
+            label="Nazwisko"
             style={styles.form}
             onChangeText={(e) => {
               setSurname(e);
@@ -85,7 +78,7 @@ export default function App() {
           />
           {!isOsoba ? (
             <TextInput
-              placeholder="Pesel"
+              label="PESEL"
               style={styles.form}
               onChangeText={(e) => {
                 setPesel(e);
@@ -93,14 +86,13 @@ export default function App() {
             />
           ) : (
             <TextInput
-              placeholder="NIP"
+              label="NIP"
               style={styles.form}
               onChangeText={(e) => {
                 setNip(e);
               }}
             />
           )}
-          <View></View>
           <View style={styles.container1}>
             <View style={styles.imgBtn}>
               <Button title="Dodaj Zdjęcie" onPress={() => openGallery()} />
@@ -112,11 +104,13 @@ export default function App() {
               />
             </View>
           </View>
-          <Button
-            title="Wyślij"
-            color="#9ef500"
-            onPress={() => handleSubmit()}
-          />
+          <View style={styles.sendBtn}>
+            <Button
+              title="Wyślij"
+              color="#9ef500"
+              onPress={() => handleSubmit()}
+            />
+          </View>
         </View>
       </LinearGradient>
     </View>
@@ -127,14 +121,14 @@ const styles = StyleSheet.create({
   linearGradient: {
     flex: 1,
     width: '100%',
-    padding: 16,
+    padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bc: {
     backgroundColor: 'rgba(215, 179, 252, 1)',
-    padding: 64,
-    borderRadius: 10,
+    maxWidth: 400,
+    borderRadius: 16,
   },
   container: {
     flex: 1,
@@ -145,19 +139,16 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   title: {
-    marginBottom: 20,
+    marginLeft: 16,
+    marginTop: 16,
     fontSize: 21,
-  },
-  switch: {
-    width: '70%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    textAlign: 'center',
   },
   form: {
-    padding: 10,
-    marginBottom: 25,
-    borderRadius: 10,
-    backgroundColor: '#ffff',
+    marginBottom: 8,
+    width: 300,
+    marginLeft: 16,
+    marginRight: 16,
   },
   imgBtn: {
     justifyContent: 'flex-start',
@@ -166,4 +157,5 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
   },
+  sendBtn: { margin: 16 },
 });
